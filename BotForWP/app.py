@@ -1,31 +1,33 @@
-
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Загружает переменные из файла .env
+# =========================================
+# LOAD ENV
+# =========================================
 
-TOKEN = os.getenv("BOT_TOKEN")
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-
+# =========================================
+# FLASK
+# =========================================
 
 app = Flask(__name__)
 
-# =========================================
-# TELEGRAM CONFIG
-# =========================================
-
-BOT_TOKEN = TOKEN
-CHAT_ID = CHAT_ID
-
+# CORS FIX
+CORS(app)
 
 # =========================================
-# SEND MESSAGE TO TELEGRAM
+# TELEGRAM
 # =========================================
 
 def send_telegram_message(text):
+
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
     payload = {
@@ -37,21 +39,34 @@ def send_telegram_message(text):
 
     return response.json()
 
+# =========================================
+# TEST ROUTE
+# =========================================
+
+@app.route('/')
+def home():
+
+    return jsonify({
+        "status": "Bot server is running"
+    })
 
 # =========================================
-# API ROUTE
+# RSVP FORM
 # =========================================
 
 @app.route('/send', methods=['POST'])
 def send():
-    data = request.json
 
-    name = data.get('name', 'Не указано')
-    phone = data.get('phone', 'Не указано')
-    messenger = data.get('messenger', 'Не указано')
-    idea = data.get('idea', 'Не указано')
+    try:
 
-    message = f"""
+        data = request.get_json()
+
+        name = data.get('name', 'Не указано')
+        phone = data.get('phone', 'Не указано')
+        messenger = data.get('messenger', 'Не указано')
+        idea = data.get('idea', 'Не указано')
+
+        message = f"""
 📩 Новая заявка!
 
 👤 Имя: {name}
@@ -64,23 +79,36 @@ def send():
 {idea}
 """
 
-    result = send_telegram_message(message)
+        result = send_telegram_message(message)
 
-    return jsonify({
-        "success": True,
-        "telegram_response": result
-    })
+        return jsonify({
+            "success": True,
+            "telegram_response": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# =========================================
+# CONTACT FORM
+# =========================================
 
 @app.route('/contact', methods=['POST'])
 def contact():
 
-    data = request.json
+    try:
 
-    name = data.get('name', 'Не указано')
-    email = data.get('email', 'Не указано')
-    message = data.get('message', 'Пусто')
+        data = request.get_json()
 
-    telegram_message = f"""
+        name = data.get('name', 'Не указано')
+        email = data.get('email', 'Не указано')
+        message = data.get('message', 'Пусто')
+
+        telegram_message = f"""
 📨 Новое сообщение с сайта!
 
 👤 Имя: {name}
@@ -91,15 +119,29 @@ def contact():
 {message}
 """
 
-    result = send_telegram_message(telegram_message)
+        result = send_telegram_message(telegram_message)
 
-    return jsonify({
-        "success": True,
-        "telegram_response": result
-    })
+        return jsonify({
+            "success": True,
+            "telegram_response": result
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 # =========================================
 # START SERVER
 # =========================================
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+
+    port = int(os.environ.get("PORT", 8000))
+
+    app.run(
+        host='0.0.0.0',
+        port=port
+    )
