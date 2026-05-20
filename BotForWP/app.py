@@ -71,7 +71,32 @@ def send():
         "telegram_response": result
     })
 
+@app.route('/contact', methods=['POST'])
+def contact():
 
+    data = request.json
+
+    name = data.get('name', 'Не указано')
+    email = data.get('email', 'Не указано')
+    message = data.get('message', 'Пусто')
+
+    telegram_message = f"""
+📨 Новое сообщение с сайта!
+
+👤 Имя: {name}
+
+📧 Email: {email}
+
+💬 Сообщение:
+{message}
+"""
+
+    result = send_telegram_message(telegram_message)
+
+    return jsonify({
+        "success": True,
+        "telegram_response": result
+    })
 # =========================================
 # START SERVER
 # =========================================
